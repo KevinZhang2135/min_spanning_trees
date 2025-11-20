@@ -268,23 +268,29 @@ def min_dftree(graph: Graph) -> list[tuple[int, int]]:
 
 
 if __name__ == '__main__':
-    num_tests = 1000
+    num_tests = 1
     for _ in range(num_tests):
         graph = Graph.generate_random(20)
-
+        
         prim_edges = prim(graph)
         prim_weight = get_total_weight(graph, prim_edges) 
 
         dft_edges = min_dftree(graph)
         dft_weight = get_total_weight(graph, dft_edges)
 
-        if success := (prim_weight != dft_weight):
-            graph.highlight_edges = prim_edges
-            graph.display()
+        graph.highlight_edges = prim_edges
+        graph.display()
 
-            graph.highlight_edges = dft_edges
-            graph.display('min_tree.html')
-            break
+        graph.highlight_edges = dft_edges
+        graph.display('min_tree.html')
+
+        # if success := (prim_weight != dft_weight):
+        #     graph.highlight_edges = prim_edges
+        #     graph.display()
+
+        #     graph.highlight_edges = dft_edges
+        #     graph.display('min_tree.html')
+        #     break
 
     print(f'{num_tests} runs: {success}')
         
