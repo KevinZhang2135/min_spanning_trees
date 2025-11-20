@@ -37,7 +37,7 @@ class Graph:
                 graph.add_edge(
                     origin,
                     randint(0, origin - 1),
-                    randint(1, 12)  # Arbitrary range for weights
+                    randint(1, 99)  # Arbitrary range for weights
                 )
 
         return graph
@@ -234,6 +234,7 @@ def min_dftree(graph: Graph) -> list[tuple[int, int]]:
     weights = [inf] * graph.num_vertices
 
     stack = [(None, 0, None)]  # Predecessor-vertex-weight tuples
+    explored = set()
 
     while stack:
         predecessor, vertex, weight = stack.pop()
@@ -243,14 +244,17 @@ def min_dftree(graph: Graph) -> list[tuple[int, int]]:
             [
                 (neighbor, weight)
                 for neighbor, weight in graph.get_edges(vertex)
-                if predecessors[neighbor] == None  # Gets unexplored neighbors
+                if neighbor not in explored  # Gets unexplored neighbors
             ],
             key=lambda pair: pair[1],  # Sorts by weight
             reverse=True
         )
 
-        stack.extend([(vertex, neighbor, weight)
-                     for neighbor, weight in unexplored_edges])
+        explored.add(vertex)
+        stack.extend([
+            (vertex, neighbor, weight)
+            for neighbor, weight in unexplored_edges
+        ])
 
         # Updates best predecessor and weight
         if predecessor != None:
@@ -268,31 +272,24 @@ def min_dftree(graph: Graph) -> list[tuple[int, int]]:
 
 
 if __name__ == '__main__':
-    num_tests = 1
-    for _ in range(num_tests):
-        graph = Graph.generate_random(20)
-        
+    num_tests = 1000
+    successes = num_tests
+
+    for test_num in range(num_tests):
+        graph = Graph.generate_random(6)
+
+        # Computes the total weights
         prim_edges = prim(graph)
         prim_weight = get_total_weight(graph, prim_edges) 
 
         dft_edges = min_dftree(graph)
         dft_weight = get_total_weight(graph, dft_edges)
 
-        graph.highlight_edges = prim_edges
-        graph.display()
+        fail_flag = 'fail' if prim_weight != dft_weight else ''
+        print(f'Test num {test_num:4}: {prim_weight:4} {dft_weight:4} {fail_flag}')
+        successes -= prim_weight != dft_weight
 
-        graph.highlight_edges = dft_edges
-        graph.display('min_tree.html')
-
-        # if success := (prim_weight != dft_weight):
-        #     graph.highlight_edges = prim_edges
-        #     graph.display()
-
-        #     graph.highlight_edges = dft_edges
-        #     graph.display('min_tree.html')
-        #     break
-
-    print(f'{num_tests} runs: {success}')
+    print(f'Successful tests: {successes}/{num_tests}')
         
 
     
