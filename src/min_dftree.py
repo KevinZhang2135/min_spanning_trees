@@ -274,6 +274,7 @@ def min_dftree(graph: Graph) -> list[tuple[int, int]]:
 if __name__ == '__main__':
     num_tests = 1000
     successes = num_tests
+    show_graph_on_fail = False
 
     for test_num in range(num_tests):
         graph = Graph.generate_random(6)
@@ -285,10 +286,22 @@ if __name__ == '__main__':
         dft_edges = min_dftree(graph)
         dft_weight = get_total_weight(graph, dft_edges)
 
+        # Tracks failures
         fail_flag = 'fail' if prim_weight != dft_weight else ''
-        print(f'Test num {test_num:4}: {prim_weight:4} {dft_weight:4} {fail_flag}')
         successes -= prim_weight != dft_weight
 
+        print(f'Test num {test_num:4}: {prim_weight:4} {dft_weight:4} {fail_flag}')
+        
+        # Displays a graph to inspect failures
+        if show_graph_on_fail and fail_flag:
+            graph.highlight_edges = prim_edges
+            graph.display()
+
+            graph.highlight_edges = dft_edges
+            graph.display('min_tree.html')
+            break
+    
+    # Summary
     print(f'Successful tests: {successes}/{num_tests}')
         
 
