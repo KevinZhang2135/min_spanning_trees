@@ -37,7 +37,7 @@ class Graph:
                 graph.add_edge(
                     origin,
                     randint(0, origin - 1),
-                    randint(1, 12) # Arbitrary range for weights
+                    randint(1, 12)  # Arbitrary range for weights
                 )
 
         return graph
@@ -48,9 +48,10 @@ class Graph:
         Returns:
             Graph: A copy of the graph
         """
-        graph = Graph()
-        graph.num_vertices = self.num_vertices
-        self.__adj_matrix = deepcopy(self.__adj_matrix)
+        graph = Graph(self.num_vertices)
+
+        graph.__adj_matrix = deepcopy(self.__adj_matrix)
+        graph.highlight_edges = deepcopy(self.highlight_edges)
 
         return graph
 
@@ -126,6 +127,18 @@ class Graph:
     def get_weight(self, start: int, end: int):
         return self.__adj_matrix[start][end]
 
+    def get_min_tree(self, min_tree_algorithm: function) -> Graph:
+        min_tree_edges = min_tree_algorithm(self)
+        min_tree = self.copy()
+
+        # Removes non-spanning tree edges
+        for start, end, _ in self.get_all_edges():
+            if ((start, end) not in min_tree_edges
+                    and (end, start) not in min_tree_edges):
+                min_tree.add_edge(start, end, None)
+
+        return min_tree
+
     def display(self, output_path='graph.html'):
         """Displays the graph as an html file with the specified file path.
 
@@ -160,7 +173,21 @@ class Graph:
 
         network.save_graph(output_path)
 
-def prim(graph: Graph) -> tuple[list[tuple[int, int]], int]:
+
+def get_total_weight(graph: Graph, edges: list[tuple[int, int]]) -> int:
+    """Gets the total weights of all the specified edges in a graph
+
+    Args:
+        graph (Graph): A graph to get edges
+        edges (list[tuple[int, int]]): List of specified edges
+
+    Returns:
+        int: The total weight of the edges
+    """
+    return sum([graph.get_weight(*edge) for edge in edges])
+
+
+def prim(graph: Graph) -> list[tuple[int, int]]:
     """Runs Prim's Algorithm on a connected graph and the edges of the minimum
     spanning tree as well as gets total weight of the edges in the tree.
 
@@ -171,11 +198,10 @@ def prim(graph: Graph) -> tuple[list[tuple[int, int]], int]:
         list[set[int, int]]: The edges in the minimum spanning tree and the 
         total weight of all its edges
     """
-    cheapest_cost = [inf] * graph.num_vertices
     cheapest_edge = [None] * graph.num_vertices
+    cheapest_cost = [inf] * graph.num_vertices
 
-    start_vertex = 0
-    cheapest_cost[start_vertex] = 0
+    cheapest_cost[0] = 0
 
     unexplored = set(range(graph.num_vertices))
     while unexplored:
@@ -200,21 +226,67 @@ def prim(graph: Graph) -> tuple[list[tuple[int, int]], int]:
 
     # Gets cheapest edges that exists
     min_tree_edges = [edge for edge in cheapest_edge if edge]
+    return min_tree_edges
 
-    # Gets the total weight of all edges in the tree
-    sum_edges = sum([graph.get_weight(*edge) for edge in min_tree_edges])
 
-    return min_tree_edges, sum_edges
+def min_dftree(graph: Graph) -> list[tuple[int, int]]:
+    predecessors = [None] * graph.num_vertices
+    weights = [inf] * graph.num_vertices
 
-def min_dftree(graph: Graph) -> tuple[list[tuple[int, int]], int]:
-    pass
+    stack = [(None, 0, None)]  # Predecessor-vertex-weight tuples
+
+    while stack:
+        predecessor, vertex, weight = stack.pop()
+
+        # Pushes unexplored neighors in descending-sorted order by weight
+        unexplored_edges = sorted(
+            [
+                (neighbor, weight)
+                for neighbor, weight in graph.get_edges(vertex)
+                if predecessors[neighbor] == None  # Gets unexplored neighbors
+            ],
+            key=lambda pair: pair[1],  # Sorts by weight
+            reverse=True
+        )
+
+        stack.extend([(vertex, neighbor, weight)
+                     for neighbor, weight in unexplored_edges])
+
+        # Updates best predecessor and weight
+        if predecessor != None:
+            if weight < weights[vertex]:
+                weights[vertex] = weight
+                predecessors[vertex] = predecessor
+
+    min_tree_edges = [
+        (start, end)
+        for start, end in enumerate(predecessors)
+        if end != None
+    ]
+
+    return min_tree_edges
 
 
 if __name__ == '__main__':
-    graph = Graph.generate_random(6)
-    
-    min_tree_edges, total_weight = prim(graph)  
-    graph.highlight_edges = min_tree_edges # Marks minimum spanning tree
+    num_tests = 1000
+    for _ in range(num_tests):
+        graph = Graph.generate_random(20)
 
-    print(f'Total weight of tree: {total_weight}')
-    graph.display()
+        prim_edges = prim(graph)
+        prim_weight = get_total_weight(graph, prim_edges) 
+
+        dft_edges = min_dftree(graph)
+        dft_weight = get_total_weight(graph, dft_edges)
+
+        if success := (prim_weight != dft_weight):
+            graph.highlight_edges = prim_edges
+            graph.display()
+
+            graph.highlight_edges = dft_edges
+            graph.display('min_tree.html')
+            break
+
+    print(f'{num_tests} runs: {success}')
+        
+
+    
