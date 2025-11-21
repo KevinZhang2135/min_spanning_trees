@@ -26,7 +26,7 @@ def shortest_path(graph: Graph) -> tuple[list[int], list[int]]:
         tuple[list[int], list[int]]: A list of total distances to each vertex
         and a list of precedessors to each vertex
     """
-    queue = [0] # Arbituarily selects 0 as the starting vertex
+    queue = [0]  # Arbituarily selects 0 as the starting vertex
     distances = [inf] * graph.num_vertices
     distances[0] = 0
 
@@ -39,8 +39,8 @@ def shortest_path(graph: Graph) -> tuple[list[int], list[int]]:
 
         # Queues unexplored neighbors and determines their distances
         for neighbor in neighbors:
-            if predecessors[neighbor] != None:
-                distances = distances[vertex] + 1
+            if distances[neighbor] == inf:
+                distances[neighbor] = distances[vertex] + 1
                 predecessors[neighbor] = vertex
 
                 queue.append(neighbor)
@@ -49,7 +49,7 @@ def shortest_path(graph: Graph) -> tuple[list[int], list[int]]:
 
 
 def breadth_first(graph: Graph) -> list[int]:
-    """Performs breath-first-traversal of a graph and returns the traversal 
+    """Performs breath-first traversal of a graph and returns the traversal 
     order.
 
     Args:
@@ -80,6 +80,45 @@ def breadth_first(graph: Graph) -> list[int]:
     return visit_order
 
 
+def depth_first(graph: Graph) -> list[int]:
+    """Performs depth-first traversal of a graph and returns the traversal 
+    order. If a vertex appears on the stack more than once, the earlier 
+    occurrences (i.e. closer to the bottom of the stack) is removed.
+
+
+    Args:
+        graph (Graph): A graph to traverse
+
+    Returns:
+        list[int]: The traversal order of vertices
+    """
+    stack = [0]
+    explored = [False] * graph.num_vertices
+    visit_order = []
+
+    # Continuously checks each stacked vertex
+    while stack:
+        vertex = stack.pop()
+        visit_order.append(vertex)
+        explored[vertex] = True
+
+        neighbors, _ = zip(*graph.get_edges(vertex))  # Ignores weights
+
+        # Processes neighbors in ascending order
+        for neighbor in neighbors:
+            # Does not process already seen vertices
+            if explored[neighbor]:
+                continue
+            
+            # Removes the earlier vertex on stack if it exists
+            if neighbor in stack:
+                stack.remove(neighbor)
+
+            stack.append(neighbor)
+
+    return visit_order
+
+
 def prim(graph: Graph) -> list[tuple[int, int]]:
     """Runs Prim's Algorithm on a connected graph and the edges of the minimum
     spanning tree as well as gets total weight of the edges in the tree.
@@ -88,7 +127,7 @@ def prim(graph: Graph) -> list[tuple[int, int]]:
         graph (Graph): A connected graph
 
     Returns:
-        list[set[int, int]]: The edges in the minimum spanning tree and the 
+        list[tuple[int, int]]: The edges in the minimum spanning tree and the 
         total weight of all its edges
     """
     cheapest_edge = [None] * graph.num_vertices
@@ -200,6 +239,8 @@ def test_dft_tree(show_graph=False):
 
 
 if __name__ == '__main__':
-    graph = Graph.generate_random(10)
-    print(breadth_first(graph))
+    num_vertices = 6
+    graph = Graph.generate_random(num_vertices)
+
+    print(depth_first(graph))
     graph.display()
